@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "factorio_mod_downloader"
+version = "0.1.0"
+description = ""
+authors = ["Panu Oksiala <panu@oksiala.fi>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.26.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^21.9b0"
+flake8 = "^4.0.1"
+mypy = "^0.910"
+types-requests = "^2.25.10"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
