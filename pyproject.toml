@@ -7,6 +7,7 @@ authors = ["Panu Oksiala <panu@oksiala.fi>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.26.0"
+tenacity = "^8.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

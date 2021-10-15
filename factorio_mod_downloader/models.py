@@ -1,17 +1,33 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import packaging.version
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Union
 
 version_parse = packaging.version.parse
+
+
+@dataclass(frozen=True)
+class Auth:
+    username: str
+    token: str
+
+
+@dataclass(frozen=True)
+class DownloadDetails:
+    name: str
+    version: str
+    download_url: str
+    sha1: str
+    file_name: str
+
+    def __hash__(self) -> int:
+        return hash(self.name)
 
 
 @dataclass
 class Mod:
     name: str
     version: Optional[str] = None
-    download_url: Optional[str] = None
-    dependencies: Optional[Set[str]] = None
 
     def __hash__(self) -> int:
         return hash(self.name)
