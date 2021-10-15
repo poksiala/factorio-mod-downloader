@@ -3,7 +3,7 @@ import json
 import pytest
 
 from factorio_mod_downloader import __version__
-from factorio_mod_downloader.__main__ import (
+from factorio_mod_downloader.dependencies import (
     Mod,
     parse_modlist,
     parse_releases_from_response,
