@@ -20,8 +20,12 @@ def test_version():
 
 
 def test_parse_modlist():
-    modlist = ["foo", "bar==0.1.0"]
-    expected = {Mod(name="foo", version=None), Mod(name="bar", version="0.1.0")}
+    modlist = ["bar==0.1.0", "foo", "baz==0.4.1"]
+    expected = {
+        Mod(name="foo", version=None),
+        Mod(name="bar", version="0.1.0"),
+        Mod(name="baz", version="0.4.1"),
+    }
     assert parse_modlist(modlist) == expected
 
 

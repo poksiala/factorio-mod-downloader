@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 def parse_modlist(modlist: List[str]) -> Set[Mod]:
     def parse_modlist_item(mod: str) -> Mod:
-        split = mod.split("==")
-        return Mod(name=split[0].strip(), version=split[1] if len(split) == 2 else None)
+        split = mod.strip().split("==")
+        return Mod(name=split[0], version=split[1] if len(split) == 2 else None)
 
     return set(parse_modlist_item(mod) for mod in modlist)
 
@@ -38,7 +38,7 @@ def find_release(releases: List[Release], version: Optional[str] = None) -> Rele
     for release in releases:
         if release.version == version:
             return release
-    raise EOFError("Mathcing version not found")
+    raise EOFError("Version %s not found", version)
 
 
 def build_download_info(mod: Mod, release: Release) -> DownloadDetails:
@@ -59,14 +59,17 @@ def _solve_dependencies(
     new_dependencies: Set[str] = set()
 
     for mod in unsolved_mods:
+        logger.info("resolving mod %s", mod)
         releases = fetch_releases_for_mod(mod, client)
+        logger.debug("Found %d releases", len(releases))
         release = find_release(releases, version=mod.version)
+        logger.debug("Selected release %s", release)
         download_details.add(build_download_info(mod, release))
         new_dependencies.update(release.dependencies)
 
     if new_dependencies:
         _solve_dependencies(
-            set(Mod(dep) for dep in new_dependencies), download_details, client
+            set(Mod(name=dep) for dep in new_dependencies), download_details, client
         )
 
 
@@ -74,6 +77,7 @@ def solve_dependencies(
     modlist: List[str], client: requests.Session
 ) -> List[DownloadDetails]:
     mods = parse_modlist(modlist)
+    logger.debug("Initial modlist: %s", list(mod.name for mod in mods))
     download_details: Set[DownloadDetails] = set()
     _solve_dependencies(mods, download_details, client)
     return list(download_details)
