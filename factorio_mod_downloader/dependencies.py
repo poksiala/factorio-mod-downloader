@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import requests
 
-from .models import DownloadDetails, Mod, Release
+from .models import Dependency, DownloadDetails, Mod, Release
 
 MODS_BASE_URL = "https://mods.factorio.com"
 
@@ -12,11 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse_modlist(modlist: List[str]) -> Set[Mod]:
-    def parse_modlist_item(mod: str) -> Mod:
-        split = mod.strip().split("==")
-        return Mod(name=split[0], version=split[1] if len(split) == 2 else None)
-
-    return set(parse_modlist_item(mod) for mod in modlist)
+    return set(Mod.from_string(mod) for mod in modlist)
 
 
 def parse_releases_from_response(json_response: Dict[str, Any]) -> List[Release]:
@@ -38,7 +34,7 @@ def find_release(releases: List[Release], version: Optional[str] = None) -> Rele
     for release in releases:
         if release.version == version:
             return release
-    raise EOFError("Version %s not found", version)
+    raise EOFError("Version %s not found" % version)
 
 
 def build_download_info(mod: Mod, release: Release) -> DownloadDetails:
@@ -52,11 +48,14 @@ def build_download_info(mod: Mod, release: Release) -> DownloadDetails:
 
 
 def _solve_dependencies(
-    mods: Set[Mod], download_details: Set[DownloadDetails], client: requests.Session
+    mods: Set[Mod],
+    download_details: Set[DownloadDetails],
+    client: requests.Session,
+    no_optionals: bool,
 ):
     resolved_mod_names = set(dd.name for dd in download_details)
     unsolved_mods = (mod for mod in mods if mod.name not in resolved_mod_names)
-    new_dependencies: Set[str] = set()
+    new_dependencies: Set[Mod] = set()
 
     for mod in unsolved_mods:
         logger.info("resolving mod %s", mod)
@@ -65,19 +64,24 @@ def _solve_dependencies(
         release = find_release(releases, version=mod.version)
         logger.debug("Selected release %s", release)
         download_details.add(build_download_info(mod, release))
-        new_dependencies.update(release.dependencies)
+        new_dependencies.update(
+            dep for dep in release.dependencies if not dep.optional or not no_optionals
+        )
 
     if new_dependencies:
         _solve_dependencies(
-            set(Mod(name=dep) for dep in new_dependencies), download_details, client
+            new_dependencies,
+            download_details,
+            client,
+            no_optionals,
         )
 
 
 def solve_dependencies(
-    modlist: List[str], client: requests.Session
+    modlist: List[str], client: requests.Session, no_optionals: bool
 ) -> List[DownloadDetails]:
     mods = parse_modlist(modlist)
     logger.debug("Initial modlist: %s", list(mod.name for mod in mods))
     download_details: Set[DownloadDetails] = set()
-    _solve_dependencies(mods, download_details, client)
+    _solve_dependencies(mods, download_details, client, no_optionals)
     return list(download_details)

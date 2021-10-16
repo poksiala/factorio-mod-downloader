@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 from typing import Optional
@@ -32,17 +33,29 @@ def get_auth(client: requests.Session) -> Optional[Auth]:
     return Auth(username=username, token=token)
 
 
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser("factorio-mod-downloader")
+    parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument("--dry-run", action="store_true", default=False)
+    parser.add_argument("--no-optionals", action="store_true", default=False)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    args = get_args()
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     logging.getLogger("urllib3").setLevel(logging.INFO)
     client = requests.Session()
+
+    with open("modlist", "r") as f:
+        mods = solve_dependencies(f.readlines(), client, no_optionals=args.no_optionals)
+    logging.info("Resolved %d mods", len(mods))
+    if args.dry_run:
+        exit(0)
+
     auth = get_auth(client)
     if auth is None:
         logging.error(
             "FACTORIO_USERNAME and FACTORIO_TOKEN or FACTORIO_PASSWORD must be defined."
         )
-        exit(1)
-    with open("modlist", "r") as f:
-        mods = solve_dependencies(f.readlines(), client)
-    logging.info("Resolved %d mods", len(mods))
     download_mods(mods, client, auth)

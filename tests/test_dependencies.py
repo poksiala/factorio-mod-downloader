@@ -4,12 +4,11 @@ import pytest
 
 from factorio_mod_downloader import __version__
 from factorio_mod_downloader.dependencies import (
-    Mod,
     parse_modlist,
     parse_releases_from_response,
     find_release,
 )
-from factorio_mod_downloader.models import Release
+from factorio_mod_downloader.models import Dependency, Mod, Release
 
 
 from . import test_data
@@ -20,11 +19,11 @@ def test_version():
 
 
 def test_parse_modlist():
-    modlist = ["bar==0.1.0", "foo", "baz==0.4.1"]
+    modlist = ["bar == 0.1.0", "foo", "baz == 0.4.1"]
     expected = {
-        Mod(name="foo", version=None),
-        Mod(name="bar", version="0.1.0"),
-        Mod(name="baz", version="0.4.1"),
+        Mod(name="foo", optional=False, operator=None, version=None),
+        Mod(name="bar", optional=False, operator="==", version="0.1.0"),
+        Mod(name="baz", optional=False, operator="==", version="0.4.1"),
     }
     assert parse_modlist(modlist) == expected
 
@@ -46,8 +45,8 @@ def test_parse_releases_from_response_complex():
     assert len(results) == 24
     first = results[0]
     assert first.version == "0.13.0"
-    assert len(first.dependencies) == 1
-    assert first.dependencies[0] == "boblibrary"
+    assert len(first.dependencies) == 2
+    assert first.dependencies[0].name is set("boblibrary", "bobplates")
 
 
 def test_find_release():
