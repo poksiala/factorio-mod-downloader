@@ -46,7 +46,7 @@ class Release:
     def __post_init__(self):
         def is_interesting(dep: str) -> bool:
             # Returns false for base mod and optional mods
-            return not dep.split(" ")[0] in {"base", "?"}
+            return not dep.split(" ")[0] in {"base", "?", "(?)"}
 
         _dependencies = self.info_json.get("dependencies")
         if isinstance(_dependencies, list):
